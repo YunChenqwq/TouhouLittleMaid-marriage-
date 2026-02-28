@@ -10,22 +10,22 @@ authors = "${mod_authors}"
 description = '''${mod_description}'''
 
 [[dependencies.${mod_id}]]
-modId = "neoforge"
-type = "required"
-versionRange = "${neo_version_range}"
+modId = "forge"
+mandatory = true
+versionRange = "${forge_version_range}"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.${mod_id}]]
 modId = "minecraft"
-type = "required"
+mandatory = true
 versionRange = "${minecraft_version_range}"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.${mod_id}]]
 modId = "touhou_little_maid"
-type = "required"
+mandatory = true
 versionRange = "[1.5.0,)"
 ordering = "AFTER"
 side = "BOTH"

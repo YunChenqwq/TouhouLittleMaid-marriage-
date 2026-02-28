@@ -1,4 +1,4 @@
-# 车万女仆：心契同眠（NeoForge 1.21.1）
+# 车万女仆：心契同眠（Forge 1.20.1）
 
 这是一个给 **Touhou Little Maid（车万女仆）** 做的附属模组。  
 核心主题是「誓约、同眠、生育、成长」，偏剧情化和养成体验。
@@ -7,10 +7,10 @@
 
 ## 一、版本与前置
 
-- Minecraft：`1.21.1`
-- NeoForge：`21.1.186`（21.x 系列）
-- Java：`JDK 21`
-- 前置模组：`TouhouLittleMaid 1.5.0+（NeoForge 1.21.1）`
+- Minecraft：`1.20.1`
+- Forge：`47.3.0+`
+- Java：`JDK 17`（JDK 21 也可用于编译）
+- 前置模组：`TouhouLittleMaid 1.5.0-forge+mc1.20.1`
 
 ---
 
@@ -51,7 +51,7 @@
 
 ## 三、安装方法（玩家）
 
-1. 安装对应版本 NeoForge（1.21.1）
+1. 安装对应版本 Forge（1.20.1）
 2. 把前置 `TouhouLittleMaid` 和本模组 jar 一起放入 `mods` 文件夹
 3. 启动游戏
 
@@ -64,7 +64,7 @@
 gradlew.bat runClient
 ```
 
-如果你的终端找不到 Java，请先设置 `JAVA_HOME`（JDK 21）。
+如果你的终端找不到 Java，请先设置 `JAVA_HOME`。
 
 ---
 
@@ -113,7 +113,7 @@ RRR
 
 ---
 
-## 八、配置项（可在配置界面或 toml 调整）
+## 八、配置项（toml 调整）
 
 配置文件：`config/maidmarriage-common.toml`
 
@@ -144,6 +144,6 @@ RRR
 ## 十、致谢
 
 - Touhou Little Maid 开发团队  
-- NeoForge 社区与文档支持
+- Forge 社区与文档支持
 
 如果你在游玩中发现 bug，欢迎提交 issue 或直接带日志反馈。

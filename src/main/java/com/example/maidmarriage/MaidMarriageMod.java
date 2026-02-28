@@ -4,14 +4,12 @@ import com.example.maidmarriage.config.ModConfigs;
 import com.example.maidmarriage.init.ModEntities;
 import com.example.maidmarriage.init.ModItems;
 import net.minecraft.world.item.CreativeModeTabs;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
-import net.neoforged.neoforge.client.gui.ConfigurationScreen;
-import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.loading.FMLEnvironment;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 @Mod(MaidMarriageMod.MOD_ID)
 /**
@@ -21,15 +19,12 @@ import net.neoforged.fml.loading.FMLEnvironment;
 public final class MaidMarriageMod {
     public static final String MOD_ID = "maidmarriage";
 
-    public MaidMarriageMod(IEventBus modBus, ModContainer modContainer) {
+    public MaidMarriageMod() {
+        IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         ModItems.ITEMS.register(modBus);
         ModEntities.ENTITY_TYPES.register(modBus);
         modBus.addListener(MaidMarriageMod::addCreativeTabItems);
-        modContainer.registerConfig(ModConfig.Type.COMMON, ModConfigs.SPEC);
-        if (FMLEnvironment.dist.isClient()) {
-            modContainer.registerExtensionPoint(IConfigScreenFactory.class,
-                    (container, parent) -> new ConfigurationScreen(container, parent));
-        }
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ModConfigs.SPEC);
     }
 
     private static void addCreativeTabItems(BuildCreativeModeTabContentsEvent event) {

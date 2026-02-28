@@ -2,11 +2,11 @@ package com.example.maidmarriage.init;
 
 import com.example.maidmarriage.MaidMarriageMod;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
+import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 
-@EventBusSubscriber(modid = MaidMarriageMod.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@Mod.EventBusSubscriber(modid = MaidMarriageMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 /**
  * 实体事件初始化：绑定实体属性与相关事件。
  * 该类的具体逻辑可参见下方方法与字段定义。

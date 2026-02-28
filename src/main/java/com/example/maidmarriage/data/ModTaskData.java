@@ -18,11 +18,11 @@ public final class ModTaskData {
 
     public static void registerAll(TaskDataRegister register) {
         MARRIAGE_DATA = register.register(
-                ResourceLocation.fromNamespaceAndPath(MaidMarriageMod.MOD_ID, "marriage_data"),
+                new ResourceLocation(MaidMarriageMod.MOD_ID, "marriage_data"),
                 MarriageData.CODEC
         );
         PREGNANCY_DATA = register.register(
-                ResourceLocation.fromNamespaceAndPath(MaidMarriageMod.MOD_ID, "pregnancy_data"),
+                new ResourceLocation(MaidMarriageMod.MOD_ID, "pregnancy_data"),
                 PregnancyData.CODEC
         );
     }

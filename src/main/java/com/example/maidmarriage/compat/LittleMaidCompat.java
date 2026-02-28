@@ -6,9 +6,9 @@ import com.github.tartaricacid.touhoulittlemaid.api.ILittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.LittleMaidExtension;
 import com.github.tartaricacid.touhoulittlemaid.client.overlay.MaidTipsOverlay;
 import com.github.tartaricacid.touhoulittlemaid.entity.data.TaskDataRegister;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.MinecraftForge;
 
 @LittleMaidExtension
 /**
@@ -17,8 +17,8 @@ import net.neoforged.neoforge.common.NeoForge;
  */
 public class LittleMaidCompat implements ILittleMaid {
     public LittleMaidCompat() {
-        NeoForge.EVENT_BUS.register(MarriageEventHandler.class);
-        NeoForge.EVENT_BUS.register(RomanceSleepManager.class);
+        MinecraftForge.EVENT_BUS.register(MarriageEventHandler.class);
+        MinecraftForge.EVENT_BUS.register(RomanceSleepManager.class);
     }
 
     @Override

@@ -1,19 +1,19 @@
 package com.example.maidmarriage.config;
 
-import net.neoforged.neoforge.common.ModConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec;
 
 /**
  * 模组配置定义：后宫模式、结婚好感度与怀孕概率。
  * 该类的具体逻辑可参见下方方法与字段定义。
  */
 public final class ModConfigs {
-    public static final ModConfigSpec SPEC;
-    private static final ModConfigSpec.BooleanValue HAREM_MODE;
-    private static final ModConfigSpec.IntValue REQUIRED_FAVORABILITY;
-    private static final ModConfigSpec.DoubleValue PREGNANCY_CHANCE;
+    public static final ForgeConfigSpec SPEC;
+    private static final ForgeConfigSpec.BooleanValue HAREM_MODE;
+    private static final ForgeConfigSpec.IntValue REQUIRED_FAVORABILITY;
+    private static final ForgeConfigSpec.DoubleValue PREGNANCY_CHANCE;
 
     static {
-        ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
+        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
         builder.comment("女仆婚姻模组通用设置。")
                 .translation("config.maidmarriage.general")
                 .push("general");

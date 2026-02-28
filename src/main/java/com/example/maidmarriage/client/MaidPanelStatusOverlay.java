@@ -10,12 +10,12 @@ import java.util.Optional;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ScreenEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ScreenEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 
-@EventBusSubscriber(modid = MaidMarriageMod.MOD_ID, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = MaidMarriageMod.MOD_ID, value = Dist.CLIENT)
 /**
  * 女仆面板状态扩展：在原面板额外显示婚姻与生理信息。
  * 该类的具体逻辑可参见下方方法与字段定义。

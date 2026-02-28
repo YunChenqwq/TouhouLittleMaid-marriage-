@@ -9,10 +9,10 @@ import com.example.maidmarriage.entity.MaidChildEntity;
 import com.example.maidmarriage.init.ModItems;
 import com.github.tartaricacid.touhoulittlemaid.api.event.InteractMaidEvent;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
-import java.util.List;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -20,10 +20,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.CustomData;
-import net.minecraft.world.item.component.ItemLore;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.items.ItemHandlerHelper;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.items.ItemHandlerHelper;
 
 /**
  * 结婚与交互核心逻辑：处理求婚、戒指刻字、测试道具等。
@@ -111,7 +109,8 @@ public final class MarriageEventHandler {
             return;
         }
 
-        ItemStack maidRing = stack.copyWithCount(1);
+        ItemStack maidRing = stack.copy();
+        maidRing.setCount(1);
 
         maid.setAndSyncData(ModTaskData.MARRIAGE_DATA, currentData.marry(player.getUUID(), maid.level().getGameTime()));
         engraveRing(offhandRing, player, maid);
@@ -183,20 +182,24 @@ public final class MarriageEventHandler {
     }
 
     private static boolean isRingUsed(ItemStack stack) {
-        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
-        return data != null && data.copyTag().getBoolean(TAG_RING_USED);
+        CompoundTag tag = stack.getTag();
+        return tag != null && tag.getBoolean(TAG_RING_USED);
     }
 
     private static void engraveRing(ItemStack ring, net.minecraft.world.entity.player.Player player, EntityMaid maid) {
-        CustomData.update(DataComponents.CUSTOM_DATA, ring, tag -> {
-            tag.putBoolean(TAG_RING_USED, true);
-            tag.putUUID(TAG_RING_PLAYER, player.getUUID());
-            tag.putUUID(TAG_RING_MAID, maid.getUUID());
-        });
-        ring.set(DataComponents.CUSTOM_NAME, Component.translatable("item.maidmarriage.vow_ring"));
-        ring.set(DataComponents.LORE, new ItemLore(List.of(
-                Component.translatable("item.maidmarriage.vow_ring.pair", player.getName(), maid.getName()),
+        CompoundTag tag = ring.getOrCreateTag();
+        tag.putBoolean(TAG_RING_USED, true);
+        tag.putUUID(TAG_RING_PLAYER, player.getUUID());
+        tag.putUUID(TAG_RING_MAID, maid.getUUID());
+
+        ring.setHoverName(Component.translatable("item.maidmarriage.vow_ring"));
+        CompoundTag display = ring.getOrCreateTagElement("display");
+        ListTag lore = new ListTag();
+        lore.add(StringTag.valueOf(Component.Serializer.toJson(
+                Component.translatable("item.maidmarriage.vow_ring.pair", player.getName(), maid.getName()))));
+        lore.add(StringTag.valueOf(Component.Serializer.toJson(
                 Component.translatable("item.maidmarriage.vow_ring.desc"))));
+        display.put("Lore", lore);
     }
 
     private static void giveRingToMaid(EntityMaid maid, ItemStack ring) {

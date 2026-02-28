@@ -3,12 +3,12 @@ package com.example.maidmarriage.client;
 import com.example.maidmarriage.MaidMarriageMod;
 import com.example.maidmarriage.init.ModEntities;
 import net.minecraft.client.renderer.entity.EntityRenderers;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 
-@EventBusSubscriber(modid = MaidMarriageMod.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = MaidMarriageMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 /**
  * 客户端事件注册：绑定渲染器与客户端显示逻辑。
  * 该类的具体逻辑可参见下方方法与字段定义。

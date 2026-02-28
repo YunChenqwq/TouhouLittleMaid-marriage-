@@ -2,7 +2,7 @@ package com.example.maidmarriage.advancement;
 
 import com.example.maidmarriage.MaidMarriageMod;
 import com.mojang.logging.LogUtils;
-import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -49,21 +49,21 @@ public final class ModAdvancements {
         if (server == null) {
             return;
         }
-        AdvancementHolder holder = server.getAdvancements().get(id);
-        if (holder == null) {
+        Advancement advancement = server.getAdvancements().getAdvancement(id);
+        if (advancement == null) {
             LOGGER.warn("Cannot find advancement {} while granting to {}", id, player.getGameProfile().getName());
             return;
         }
-        AdvancementProgress progress = player.getAdvancements().getOrStartProgress(holder);
+        AdvancementProgress progress = player.getAdvancements().getOrStartProgress(advancement);
         if (progress.isDone()) {
             return;
         }
-        for (String criterion : holder.value().criteria().keySet()) {
-            player.getAdvancements().award(holder, criterion);
+        for (String criterion : advancement.getCriteria().keySet()) {
+            player.getAdvancements().award(advancement, criterion);
         }
     }
 
     private static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(MaidMarriageMod.MOD_ID, path);
+        return new ResourceLocation(MaidMarriageMod.MOD_ID, path);
     }
 }

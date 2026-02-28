@@ -20,7 +20,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -32,9 +31,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 /**
  * 同眠与生育流程管理：处理剧情、心情循环、怀孕与分娩。
@@ -145,8 +144,11 @@ public final class RomanceSleepManager {
     }
 
     @SubscribeEvent
-    public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (!(event.getEntity() instanceof ServerPlayer player) || player.level().isClientSide()) {
+    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) {
+            return;
+        }
+        if (!(event.player instanceof ServerPlayer player) || player.level().isClientSide()) {
             return;
         }
         tickProposalDialogue(player);
@@ -300,7 +302,7 @@ public final class RomanceSleepManager {
 
     private static Component readPlannedChildName(ServerPlayer player) {
         ItemStack offhand = player.getOffhandItem();
-        if (offhand.is(Items.NAME_TAG) && offhand.has(DataComponents.CUSTOM_NAME)) {
+        if (offhand.is(Items.NAME_TAG) && offhand.hasCustomHoverName()) {
             Component name = offhand.getHoverName().copy();
             if (!player.getAbilities().instabuild) {
                 offhand.shrink(1);
