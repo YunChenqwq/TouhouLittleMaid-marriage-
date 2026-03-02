@@ -1,10 +1,12 @@
 package com.example.maidmarriage;
 
 import com.example.maidmarriage.config.ModConfigs;
+import com.example.maidmarriage.debug.ModDebugCommands;
 import com.example.maidmarriage.init.ModEntities;
 import com.example.maidmarriage.init.ModItems;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
@@ -24,6 +26,7 @@ public final class MaidMarriageMod {
     public MaidMarriageMod(IEventBus modBus, ModContainer modContainer) {
         ModItems.ITEMS.register(modBus);
         ModEntities.ENTITY_TYPES.register(modBus);
+        NeoForge.EVENT_BUS.register(ModDebugCommands.class);
         modBus.addListener(MaidMarriageMod::addCreativeTabItems);
         modContainer.registerConfig(ModConfig.Type.COMMON, ModConfigs.SPEC);
         if (FMLEnvironment.dist.isClient()) {
@@ -36,7 +39,9 @@ public final class MaidMarriageMod {
         if (event.getTabKey().equals(CreativeModeTabs.INGREDIENTS)) {
             event.accept(ModItems.PROPOSAL_RING);
             event.accept(ModItems.YES_PILLOW);
+            event.accept(ModItems.RAINBOW_BOUQUET);
             event.accept(ModItems.LONGING_TESTER);
+            event.accept(ModItems.FLOWER_TEST_KIT);
         }
     }
 }

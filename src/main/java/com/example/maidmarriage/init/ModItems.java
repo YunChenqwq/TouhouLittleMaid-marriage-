@@ -2,6 +2,7 @@ package com.example.maidmarriage.init;
 
 import com.example.maidmarriage.MaidMarriageMod;
 import com.example.maidmarriage.item.DescriptionItem;
+import com.example.maidmarriage.item.FlowerTestKitItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -22,8 +23,16 @@ public final class ModItems {
             () -> new DescriptionItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE),
                     "tooltip.maidmarriage.yes_pillow"));
 
+    public static final DeferredItem<Item> RAINBOW_BOUQUET = ITEMS.register("rainbow_bouquet",
+            () -> new DescriptionItem(new Item.Properties().stacksTo(64).rarity(Rarity.UNCOMMON),
+                    "tooltip.maidmarriage.rainbow_bouquet"));
+
     public static final DeferredItem<Item> LONGING_TESTER = ITEMS.register("longing_tester",
             () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+
+    public static final DeferredItem<Item> FLOWER_TEST_KIT = ITEMS.register("flower_test_kit",
+            () -> new FlowerTestKitItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE),
+                    "tooltip.maidmarriage.flower_test_kit"));
 
     private ModItems() {
     }

@@ -1,5 +1,6 @@
 package com.example.maidmarriage.data;
 
+import com.example.maidmarriage.config.ModConfigs;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.Locale;
@@ -46,7 +47,7 @@ public record PregnancyData(
 
     public PregnancyData forceLonging(long gameTime) {
         long currentDay = gameTime / 24000L;
-        long longingDay = currentDay - 2L;
+        long longingDay = currentDay - Math.max(1L, ModConfigs.longingDays());
         return new PregnancyData(pregnant, father, conceivedGameTime, true, firstBirth, longingDay);
     }
 
@@ -68,6 +69,9 @@ public record PregnancyData(
             return Optional.of(MoodState.CALM);
         }
         if (missingDays == 1) {
+            return Optional.of(MoodState.NORMAL);
+        }
+        if (missingDays < Math.max(2L, ModConfigs.longingDays())) {
             return Optional.of(MoodState.NORMAL);
         }
         return Optional.of(MoodState.LONGING);

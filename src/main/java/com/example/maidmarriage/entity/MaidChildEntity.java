@@ -1,27 +1,32 @@
 package com.example.maidmarriage.entity;
 
+import com.example.maidmarriage.config.ModConfigs;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import java.util.UUID;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 
 /**
- * 子代女仆实体：负责成长阶段、父母信息与外观继承。
- * 该类的具体逻辑可参见下方方法与字段定义。
+ * Child maid entity with growth stages and parent/model inheritance.
  */
 public class MaidChildEntity extends EntityMaid {
-    // 三天成长为成年（1 天 = 24000 tick）
-    public static final int ADULT_AFTER_TICKS = 3 * 24000;
-    public static final int MIDDLE_STAGE_TICKS = ADULT_AFTER_TICKS / 2;
+    private static final int DAY_TICKS = 24000;
+
     public static final String BORN_MAID_TAG = "maidmarriage_born_maid";
     public static final String PERSISTENT_MOTHER_UUID_KEY = "maidmarriage_mother_uuid";
     public static final String PERSISTENT_FATHER_UUID_KEY = "maidmarriage_father_uuid";
+    public static final String PERSISTENT_CHILD_ACTIVE_KEY = "maidmarriage_child_active";
+    public static final String PERSISTENT_GROWTH_TICKS_KEY = "maidmarriage_child_growth_ticks";
+    public static final String PERSISTENT_GROWTH_STAGE_KEY = "maidmarriage_child_growth_stage";
+    public static final String PERSISTENT_TAME_INITIALIZED_KEY = "maidmarriage_child_tame_initialized";
+
     private static final double HEALTH_MULTIPLIER = 1.3D;
     private static final String TAG_GROWTH_TICKS = "GrowthTicks";
     private static final String TAG_STAGE = "GrowthStage";
@@ -50,6 +55,7 @@ public class MaidChildEntity extends EntityMaid {
             String ysmModelId = mother.getYsmModelId();
             String ysmTexture = mother.getYsmModelTexture();
             Component ysmName = mother.getYsmModelName();
+            this.setIsYsmModel(true);
             this.setYsmModel(ysmModelId, ysmTexture, ysmName);
             return;
         }
@@ -67,9 +73,12 @@ public class MaidChildEntity extends EntityMaid {
         if (level().isClientSide) {
             return;
         }
+        ensureFullTameState();
+        getPersistentData().putBoolean(PERSISTENT_CHILD_ACTIVE_KEY, true);
         this.growthTicks++;
         updateGrowthStage();
-        if (this.growthTicks >= ADULT_AFTER_TICKS) {
+        syncPersistentGrowthData();
+        if (this.growthTicks >= getAdultAfterTicks()) {
             promoteToAdult();
         }
     }
@@ -100,6 +109,13 @@ public class MaidChildEntity extends EntityMaid {
         if (tag.contains(TAG_STAGE)) {
             this.stage = GrowthStage.byName(tag.getString(TAG_STAGE));
         }
+        CompoundTag persistent = this.getPersistentData();
+        if (persistent.contains(PERSISTENT_GROWTH_TICKS_KEY)) {
+            this.growthTicks = Math.max(this.growthTicks, persistent.getInt(PERSISTENT_GROWTH_TICKS_KEY));
+        }
+        if (persistent.contains(PERSISTENT_GROWTH_STAGE_KEY)) {
+            this.stage = GrowthStage.byName(persistent.getString(PERSISTENT_GROWTH_STAGE_KEY));
+        }
         if (this.motherUuid != null || this.fatherUuid != null) {
             writeParentData(this, this.motherUuid, this.fatherUuid);
         }
@@ -118,6 +134,7 @@ public class MaidChildEntity extends EntityMaid {
             adult.setCustomName(this.getCustomName());
         }
         if (this.isYsmModel()) {
+            adult.setIsYsmModel(true);
             adult.setYsmModel(this.getYsmModelId(), this.getYsmModelTexture(), this.getYsmModelName());
         } else {
             adult.setIsYsmModel(false);
@@ -125,18 +142,28 @@ public class MaidChildEntity extends EntityMaid {
         }
         applyBornMaidTraits(adult);
         writeParentData(adult, this.motherUuid, this.fatherUuid);
+        markAsAdult(adult);
         serverLevel.addFreshEntity(adult);
+        serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER, adult.getX(), adult.getY(1.0D), adult.getZ(),
+                10, 0.3D, 0.2D, 0.3D, 0.02D);
         this.discard();
     }
 
     private void updateGrowthStage() {
-        if (this.growthTicks < MIDDLE_STAGE_TICKS) {
+        int middleStageTicks = getMiddleStageTicks();
+        int adultAfterTicks = getAdultAfterTicks();
+
+        if (this.growthTicks < middleStageTicks) {
             this.stage = GrowthStage.INFANT;
             return;
         }
-        if (this.growthTicks < ADULT_AFTER_TICKS) {
+        if (this.growthTicks < adultAfterTicks) {
             if (this.stage != GrowthStage.MIDDLE) {
                 this.stage = GrowthStage.MIDDLE;
+                if (this.level() instanceof ServerLevel serverLevel) {
+                    serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER, this.getX(), this.getY(1.0D), this.getZ(),
+                            8, 0.25D, 0.2D, 0.25D, 0.02D);
+                }
                 if (this.getOwner() instanceof Player owner) {
                     owner.sendSystemMessage(Component.translatable("message.maidmarriage.child.growth.middle"));
                 }
@@ -146,9 +173,38 @@ public class MaidChildEntity extends EntityMaid {
         this.stage = GrowthStage.ADULT;
     }
 
+    private void syncPersistentGrowthData() {
+        CompoundTag persistent = this.getPersistentData();
+        persistent.putInt(PERSISTENT_GROWTH_TICKS_KEY, this.growthTicks);
+        persistent.putString(PERSISTENT_GROWTH_STAGE_KEY, this.stage.name());
+    }
+
+    private void ensureFullTameState() {
+        CompoundTag persistent = this.getPersistentData();
+        if (persistent.getBoolean(PERSISTENT_TAME_INITIALIZED_KEY)) {
+            return;
+        }
+        if (this.getOwner() instanceof Player owner) {
+            this.tame(owner);
+            persistent.putBoolean(PERSISTENT_TAME_INITIALIZED_KEY, true);
+        }
+    }
+
+    private static int getAdultAfterTicks() {
+        return Math.max(1, ModConfigs.childGrowthDays()) * DAY_TICKS;
+    }
+
+    private static int getMiddleStageTicks() {
+        return Math.max(1, getAdultAfterTicks() / 2);
+    }
+
     private static void applyBornMaidTraits(EntityMaid maid) {
         maid.addTag(BORN_MAID_TAG);
-        maid.setFavorability(300);
+        maid.setFavorability(64);
+        if (maid instanceof MaidChildEntity) {
+            maid.getPersistentData().putBoolean(PERSISTENT_CHILD_ACTIVE_KEY, true);
+            maid.getPersistentData().putBoolean(PERSISTENT_TAME_INITIALIZED_KEY, maid.isTame() && maid.getOwnerUUID() != null);
+        }
         AttributeInstance maxHealth = maid.getAttribute(Attributes.MAX_HEALTH);
         if (maxHealth != null) {
             maxHealth.setBaseValue(maxHealth.getBaseValue() * HEALTH_MULTIPLIER);
@@ -169,6 +225,18 @@ public class MaidChildEntity extends EntityMaid {
     public static boolean isChildOfPlayer(EntityMaid maid, UUID playerUuid) {
         CompoundTag tag = maid.getPersistentData();
         return tag.hasUUID(PERSISTENT_FATHER_UUID_KEY) && playerUuid.equals(tag.getUUID(PERSISTENT_FATHER_UUID_KEY));
+    }
+
+    public static boolean shouldStayChild(EntityMaid maid) {
+        return maid.getPersistentData().getBoolean(PERSISTENT_CHILD_ACTIVE_KEY);
+    }
+
+    public static void markAsAdult(EntityMaid maid) {
+        CompoundTag persistent = maid.getPersistentData();
+        persistent.putBoolean(PERSISTENT_CHILD_ACTIVE_KEY, false);
+        persistent.remove(PERSISTENT_GROWTH_TICKS_KEY);
+        persistent.remove(PERSISTENT_GROWTH_STAGE_KEY);
+        persistent.remove(PERSISTENT_TAME_INITIALIZED_KEY);
     }
 
     public enum GrowthStage {

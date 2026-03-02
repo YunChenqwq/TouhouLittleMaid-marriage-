@@ -2,13 +2,13 @@
   "parent": "maidmarriage:root",
   "display": {
     "icon": {
-      "id": "maidmarriage:proposal_ring"
+      "id": "minecraft:orange_tulip"
     },
     "title": {
-      "translate": "advancements.maidmarriage.marriage.title"
+      "translate": "advancements.maidmarriage.flower_orange.title"
     },
     "description": {
-      "translate": "advancements.maidmarriage.marriage.description"
+      "translate": "advancements.maidmarriage.flower_orange.description"
     },
     "frame": "task",
     "show_toast": true,
@@ -24,12 +24,5 @@
     [
       "unlocked"
     ]
-  ],
-  "rewards": {
-    "recipes": [
-      "maidmarriage:proposal_ring",
-      "maidmarriage:yes_pillow",
-      "maidmarriage:rainbow_bouquet"
-    ]
-  }
+  ]
 }

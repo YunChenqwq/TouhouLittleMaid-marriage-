@@ -1,6 +1,7 @@
 package com.example.maidmarriage.client;
 
 import com.example.maidmarriage.MaidMarriageMod;
+import com.example.maidmarriage.config.ModConfigs;
 import com.example.maidmarriage.data.MarriageData;
 import com.example.maidmarriage.data.ModTaskData;
 import com.example.maidmarriage.data.PregnancyData;
@@ -48,6 +49,9 @@ public final class MaidPanelStatusOverlay {
         Optional<PregnancyData.MoodState> mood = pregnancy == null
                 ? Optional.empty()
                 : pregnancy.currentMood(maid.level().getGameTime());
+        if (!ModConfigs.clingyMaidEnabled()) {
+            mood = Optional.empty();
+        }
 
         int x = maidGui.getGuiLeft() + 8;
         int y = maidGui.getGuiTop() + 72;

@@ -12,6 +12,7 @@ import com.github.tartaricacid.touhoulittlemaid.block.BlockMaidBed;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.IChatBubbleData;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.implement.TextChatBubbleData;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,6 +24,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -41,6 +43,7 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  * 该类的具体逻辑可参见下方方法与字段定义。
  */
 public final class RomanceSleepManager {
+    private static final int WAKE_DIALOGUE_DELAY_TICKS = 40;
     private static final int SCENE_INTERVAL_TICKS = 24;
     private static final int SINGLE_LINE_BUBBLE_TICKS = 100;
     private static final int MULTI_LINE_BUBBLE_TICKS = 60;
@@ -52,6 +55,8 @@ public final class RomanceSleepManager {
     private static final String TAG_LONGING_NEXT_TALK_TICK = "maidmarriage_longing_next_talk_tick";
     private static final String TAG_LONGING_LINE_INDEX = "maidmarriage_longing_line_index";
     private static final String TAG_LONGING_SADDLE_NEXT_TALK_TICK = "maidmarriage_longing_saddle_next_talk_tick";
+    private static final String TAG_PENDING_WAKE_DIALOGUE = "maidmarriage_pending_wake_dialogue";
+    private static final String TAG_PENDING_WAKE_DIALOGUE_DUE_TICK = "maidmarriage_pending_wake_dialogue_due_tick";
     /**
      * 第一次同寝专属文案，强调“初次体验”的仪式感。
      */
@@ -131,7 +136,8 @@ public final class RomanceSleepManager {
             return false;
         }
 
-        RomanceSession session = new RomanceSession(maid.getUUID(), pickSceneLines(player, maid));
+        boolean childbirthSession = pregnancy.isPregnantWith(player.getUUID());
+        RomanceSession session = new RomanceSession(maid.getUUID(), pickSceneLines(player, maid, childbirthSession));
         SESSIONS.put(player.getUUID(), session);
         sendNextSceneLine(player, session);
         return true;
@@ -171,7 +177,15 @@ public final class RomanceSleepManager {
     @SubscribeEvent
     public static void onMaidTick(MaidTickEvent event) {
         EntityMaid maid = event.getMaid();
-        if (maid.level().isClientSide() || maid.tickCount % 20 != 0) {
+        if (maid.level().isClientSide()) {
+            return;
+        }
+        if (maid.tickCount % 20 != 0) {
+            return;
+        }
+        flushPendingWakeDialogue(maid);
+        if (!ModConfigs.clingyMaidEnabled()) {
+            resetLongingLoopDialogue(maid);
             return;
         }
         MarriageData marriage = maid.getData(ModTaskData.MARRIAGE_DATA);
@@ -211,13 +225,14 @@ public final class RomanceSleepManager {
     }
 
     private static void finishSession(ServerPlayer player, RomanceSession session) {
+        Entity maidEntity = player.serverLevel().getEntity(session.maidUuid);
+        EntityMaid maid = maidEntity instanceof EntityMaid entityMaid && entityMaid.isAlive() ? entityMaid : null;
         if (!session.sceneFinished) {
             player.sendSystemMessage(Component.translatable("message.maidmarriage.breed.scene_interrupted"));
             return;
         }
 
-        Entity maidEntity = player.serverLevel().getEntity(session.maidUuid);
-        if (!(maidEntity instanceof EntityMaid maid) || !maid.isAlive()) {
+        if (maid == null) {
             player.sendSystemMessage(Component.translatable("message.maidmarriage.breed.mother_missing"));
             return;
         }
@@ -237,7 +252,12 @@ public final class RomanceSleepManager {
         long gameTime = maid.level().getGameTime();
         PregnancyData updated = current.markRomance(gameTime);
         maid.setAndSyncData(ModTaskData.PREGNANCY_DATA, updated);
-        speakSingleLine(maid, "dialogue.maidmarriage.after_romance");
+
+        // If this session will directly lead to childbirth, reserve dialogue channel for birth lines only.
+        boolean willGiveBirthNow = updated.pregnant() && updated.isPregnantWith(player.getUUID());
+        if (!willGiveBirthNow) {
+            speakSingleLineAfterWake(maid, "dialogue.maidmarriage.after_romance");
+        }
 
         if (!updated.pregnant()) {
             if (maid.getRandom().nextDouble() >= ModConfigs.pregnancyChance()) {
@@ -251,6 +271,7 @@ public final class RomanceSleepManager {
                 level.sendParticles(ParticleTypes.HEART, maid.getX(), maid.getY(1), maid.getZ(),
                         10, 0.3, 0.2, 0.3, 0.02);
             }
+            speakSingleLineAfterWake(maid, "dialogue.maidmarriage.pregnant");
             player.sendSystemMessage(Component.translatable("message.maidmarriage.breed.pregnant_success"));
             return;
         }
@@ -265,6 +286,7 @@ public final class RomanceSleepManager {
             return;
         }
         maid.setAndSyncData(ModTaskData.PREGNANCY_DATA, updated.completeBirth());
+        speakSingleLineAfterWake(maid, "dialogue.maidmarriage.after_birth");
         player.sendSystemMessage(Component.translatable("message.maidmarriage.breed.birth_success"));
         ModAdvancements.grantChildbirth(player);
     }
@@ -273,17 +295,19 @@ public final class RomanceSleepManager {
         if (!(mother.level() instanceof ServerLevel serverLevel)) {
             return false;
         }
+        // Ensure mother keeps adult state if save data had stale child flags.
+        MaidChildEntity.markAsAdult(mother);
         MaidChildEntity child = ModEntities.MAID_CHILD.get().create(serverLevel);
         if (child == null) {
             return false;
         }
 
-        double spawnX = mother.getX();
+        double spawnX = mother.getX() + mother.getLookAngle().x * 0.35D;
         double spawnY = mother.getY();
-        double spawnZ = mother.getZ();
+        double spawnZ = mother.getZ() + mother.getLookAngle().z * 0.35D;
 
         child.moveTo(spawnX, spawnY, spawnZ, player.getYRot(), 0);
-        child.tame(player);
+        tameChildWithOwner(child, player);
         child.setParents(mother.getUUID(), player.getUUID());
         child.applyBornMaidTraits();
         child.inheritModelFromMother(mother);
@@ -296,6 +320,11 @@ public final class RomanceSleepManager {
                     net.minecraft.sounds.SoundSource.NEUTRAL, 0.7F, 1.1F);
         }
         return success;
+    }
+
+    private static void tameChildWithOwner(EntityMaid child, ServerPlayer owner) {
+        // Use full tame flow so child maid gets the same equipment/hand behavior as normal maids.
+        child.tame(owner);
     }
 
     private static Component readPlannedChildName(ServerPlayer player) {
@@ -335,6 +364,33 @@ public final class RomanceSleepManager {
         CompoundTag data = maid.getPersistentData();
         data.remove(TAG_LONGING_NEXT_TALK_TICK);
         data.remove(TAG_LONGING_LINE_INDEX);
+    }
+
+    private static void speakSingleLineAfterWake(EntityMaid maid, String langKey) {
+        CompoundTag data = maid.getPersistentData();
+        data.putString(TAG_PENDING_WAKE_DIALOGUE, langKey);
+        data.putLong(TAG_PENDING_WAKE_DIALOGUE_DUE_TICK, maid.level().getGameTime() + WAKE_DIALOGUE_DELAY_TICKS);
+    }
+
+    private static void flushPendingWakeDialogue(EntityMaid maid) {
+        if (maid.isSleeping()) {
+            return;
+        }
+        CompoundTag data = maid.getPersistentData();
+        if (!data.contains(TAG_PENDING_WAKE_DIALOGUE, Tag.TAG_STRING)) {
+            return;
+        }
+        long now = maid.level().getGameTime();
+        long dueTick = data.getLong(TAG_PENDING_WAKE_DIALOGUE_DUE_TICK);
+        if (dueTick > now) {
+            return;
+        }
+        String langKey = data.getString(TAG_PENDING_WAKE_DIALOGUE);
+        data.remove(TAG_PENDING_WAKE_DIALOGUE);
+        data.remove(TAG_PENDING_WAKE_DIALOGUE_DUE_TICK);
+        if (!langKey.isBlank()) {
+            speakSingleLine(maid, langKey);
+        }
     }
 
     private static boolean tryTriggerSaddleDialogue(ServerLevel level, EntityMaid maid, ServerPlayer owner) {
@@ -397,11 +453,26 @@ public final class RomanceSleepManager {
      * - 首次：固定播放首次剧情；
      * - 非首次：在三组随机剧情中抽一组。
      */
-    private static List<String> pickSceneLines(ServerPlayer player, EntityMaid maid) {
+    private static List<String> pickSceneLines(ServerPlayer player, EntityMaid maid, boolean childbirthSession) {
         if (player.getPersistentData().getInt(TAG_ROMANCE_COUNT) <= 0) {
             return FIRST_SCENE_LINES;
         }
-        return RANDOM_SCENE_VARIANTS.get(maid.getRandom().nextInt(RANDOM_SCENE_VARIANTS.size()));
+        if (!childbirthSession) {
+            return RANDOM_SCENE_VARIANTS.get(maid.getRandom().nextInt(RANDOM_SCENE_VARIANTS.size()));
+        }
+
+        // Childbirth session: avoid the "passion" line pack, keep tone consistent with birth dialogue.
+        List<List<String>> safeVariants = new ArrayList<>();
+        for (List<String> variant : RANDOM_SCENE_VARIANTS) {
+            boolean hasPassionLine = variant.stream().anyMatch(line -> line.contains(".sleep.passion."));
+            if (!hasPassionLine) {
+                safeVariants.add(variant);
+            }
+        }
+        if (safeVariants.isEmpty()) {
+            return RANDOM_SCENE_VARIANTS.get(0);
+        }
+        return safeVariants.get(maid.getRandom().nextInt(safeVariants.size()));
     }
 
     private static Optional<BlockPos> findAdjacentPlayerBed(ServerLevel level, BlockPos playerPos, BlockPos maidBedPos) {

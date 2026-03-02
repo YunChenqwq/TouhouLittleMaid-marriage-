@@ -1,149 +1,58 @@
-# 车万女仆：心契同眠（NeoForge 1.21.1）
+# Touhou Little Maid: XinQiTongMian (NeoForge 1.21.1)
 
-这是一个给 **Touhou Little Maid（车万女仆）** 做的附属模组。  
-核心主题是「誓约、同眠、生育、成长」，偏剧情化和养成体验。
+Addon mod for Touhou Little Maid focused on marriage, romance sleep events, pregnancy/childbirth, child maid growth, and child maid work systems.
 
----
+![Mod Preview](./????.png)
 
-## 一、版本与前置
+- GitHub: https://github.com/YunChenqwq/TouhouLittleMaid-marriage-.git
+- Minecraft: 1.21.1
+- Loader: NeoForge 21.1.x
+- Java: 21
+- Dependency: Touhou Little Maid (NeoForge 1.21.1 line)
 
-- Minecraft：`1.21.1`
-- NeoForge：`21.1.186`（21.x 系列）
-- Java：`JDK 21`
-- 前置模组：`TouhouLittleMaid 1.5.0+（NeoForge 1.21.1）`
+## Main Features
 
----
+### 1) Proposal / Marriage / Sleep
+- Use `proposal_ring` to propose.
+- Use `yes_pillow` after marriage to trigger romance sleep flow.
+- Sleep flow may cause pregnancy; follow-up flow can lead to childbirth.
 
-## 二、当前功能总览
+### 2) Child Maid
+- Child growth stages with promotion to adult maid.
+- Model inheritance support (including YSM-related data sync).
+- Soul-sign recall path attempts to keep child state.
 
-### 1) 誓约系统
-- 新物品：`求婚戒指`（`maidmarriage:proposal_ring`）
-- 玩家副手也需持有一枚戒指，主手戒指右键女仆进行求婚
-- 成功后会进入誓约状态，并赠送 `YES枕头`
-- 戒指会刻字（玩家名 + 女仆名），已刻字戒指不能再向其他女仆求婚
+### 3) Child Work (Study / Explore)
+- Work modes are switched from maid task panel.
+- Input consumption is main-hand first.
+- Unstackable inputs for Alchemy/Tactics can fallback to backpack.
+- Near exploration now uses **Stick** and returns **2 items** per run.
 
-### 2) 同眠剧情系统
-- 新物品：`YES枕头`（`maidmarriage:yes_pillow`）
-- 仅在已结婚且满足条件时触发同眠流程
-- 需要玩家床与女仆床相邻，且女仆处于睡眠状态
-- 首次同眠与后续同眠使用不同剧情文案：
-  - 首次：固定剧情
-  - 后续：温柔 / 热烈 / 甜蜜 三组文案随机
+### 4) Favorability
+- Child has default favorability baseline.
+- Work consumes favorability; idle rest can recover favorability.
+- Low favorability can lock actions until recovered.
 
-### 3) 生理与心情状态
-- 女仆面板显示：
-  - 婚姻状态
-  - 生理状态（未尝禁果 / 已怀孕 / 未怀孕）
-  - 爱心状态（`❤：冷静 / 普通 / 欲求不满`）
-- 欲求不满状态下，靠近主人会有循环对话与粒子表现
+## Recent Updates
+- Fixed child maid hand/armor capability registration mismatch.
+- Added wake dialogue delay to reduce post-sleep pose desync.
+- Added pregnancy dialogue and adjusted post-romance line.
+- Reworked input consumption logic (main hand priority).
+- Fixed interrupted-task timer so standing up no longer instant-completes task.
 
-### 4) 生育与子代
-- 同眠后按概率进入怀孕
-- 怀孕后再完成一次流程可分娩子代小女仆
-- 子代默认继承母亲模型
-- 子代可用命名牌命名
-- 子代成长阶段：幼年 -> 中等 -> 成年（总计约 3 天）
-
-### 5) 成就系统
-- 誓约之旅、结婚、初次同眠、生子、十次同眠等成就已接入
-
----
-
-## 三、安装方法（玩家）
-
-1. 安装对应版本 NeoForge（1.21.1）
-2. 把前置 `TouhouLittleMaid` 和本模组 jar 一起放入 `mods` 文件夹
-3. 启动游戏
-
----
-
-## 四、开发调试（本地）
+## Build
 
 ```powershell
-# Windows
-gradlew.bat runClient
+./gradlew.bat build
+./gradlew.bat runClient
 ```
 
-如果你的终端找不到 Java，请先设置 `JAVA_HOME`（JDK 21）。
+If Java is missing, set `JAVA_HOME` to JDK 21 first.
 
----
-
-## 五、测试指令速查
+## Quick Test Commands
 
 ```mcfunction
 /give @p maidmarriage:proposal_ring
 /give @p maidmarriage:yes_pillow
 /give @p maidmarriage:longing_tester
 ```
-
----
-
-## 六、基础玩法流程（推荐按这个顺序测）
-
-1. **先驯服并确认归属**：只能和自己的女仆互动
-2. **准备求婚戒指**：主手一枚、副手一枚
-3. **右键求婚**：达到配置好感后完成誓约
-4. **拿 YES枕头触发同眠**：夜晚、女仆在睡、床位相邻
-5. **观察结果**：进入怀孕或未怀孕（概率）
-6. **继续流程直到分娩**：出生子代小女仆
-
----
-
-## 七、合成配方
-
-### 求婚戒指
-- 原料：`钻石 x1` + `铁粒 x3`
-- 排布：
-
-```
- D 
-N N
- N 
-```
-
-### YES枕头
-- 原料：`白色羊毛 x3` + `红色羊毛 x6`
-- 排布：
-
-```
-WWW
-RRR
-RRR
-```
-
----
-
-## 八、配置项（可在配置界面或 toml 调整）
-
-配置文件：`config/maidmarriage-common.toml`
-
-- `haremMode`：是否允许后宫模式（默认 `false`）
-- `requiredFavorability`：结婚所需好感度（默认 `50`）
-- `pregnancyChance`：怀孕概率（默认 `0.6`）
-
----
-
-## 九、常见问题
-
-### Q1：工作台看不到配方？
-- 请确认模组 jar 是最新构建版本
-- 确认已启用本模组并且没有数据包覆盖配方
-
-### Q2：为什么不能求婚？
-- 必须是你自己的女仆
-- 副手必须也持有求婚戒指
-- 好感度需要达到配置阈值
-
-### Q3：为什么 YES枕头没反应？
-- 需要已结婚
-- 需要夜晚并且女仆正在睡觉
-- 你的床必须和女仆床相邻
-
----
-
-## 十、致谢
-
-- Touhou Little Maid 开发团队  
-- NeoForge 社区与文档支持
-
-如果你在游玩中发现 bug，欢迎提交 issue 或直接带日志反馈。

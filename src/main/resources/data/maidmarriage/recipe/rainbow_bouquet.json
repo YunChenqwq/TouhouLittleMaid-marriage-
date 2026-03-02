@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " W ",
+    "RBP",
+    " Y "
+  ],
+  "key": {
+    "R": {
+      "item": "minecraft:poppy"
+    },
+    "Y": {
+      "item": "minecraft:dandelion"
+    },
+    "B": {
+      "item": "minecraft:cornflower"
+    },
+    "W": {
+      "item": "minecraft:oxeye_daisy"
+    },
+    "P": {
+      "item": "minecraft:pink_tulip"
+    }
+  },
+  "result": {
+    "id": "maidmarriage:rainbow_bouquet",
+    "count": 1
+  }
+}
